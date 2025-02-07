@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerBasicMovement : MonoBehaviour
 {
@@ -21,11 +22,17 @@ public class PlayerBasicMovement : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioClip shootSfx;
     [SerializeField] private AudioClip dashSfx;
+    [SerializeField] private AudioClip hitSfx;
 
     [Header("Ammo")]
     public int maxAmmo = 10;
     [SerializeField] private TMP_Text ammoText;
     private int currentAmmo;
+
+    [Header("Vida do Player")]
+    public int maxHealth = 4;
+    private int currentHealth;
+    public Image[] heartIcons;
 
     private Vector3 lastMovementDirection = Vector3.zero;
     private bool isDashing = false;
@@ -41,6 +48,9 @@ public class PlayerBasicMovement : MonoBehaviour
 
         currentAmmo = maxAmmo;
         UpdateAmmoText();
+
+        currentHealth = maxHealth;
+        UpdateHealthUI();
     }
 
     private void Update()
@@ -125,7 +135,7 @@ public class PlayerBasicMovement : MonoBehaviour
     {
         if (ammoText != null)
         {
-            ammoText.text = $"X {currentAmmo}/{maxAmmo}";
+            ammoText.text = $"{currentAmmo}/{maxAmmo}";
         }
     }
 
@@ -133,5 +143,42 @@ public class PlayerBasicMovement : MonoBehaviour
     {
         currentAmmo = Mathf.Clamp(currentAmmo + amount, 0, maxAmmo);
         UpdateAmmoText();
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("BossSnowBall"))
+        {
+            TakeDamage(1);
+            Destroy(other.gameObject);
+        }
+    }
+
+    private void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        UpdateHealthUI();
+        PlayOneShot(hitSfx);
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void UpdateHealthUI()
+    {
+        for (int i = 0; i < heartIcons.Length; i++)
+        {
+            heartIcons[i].enabled = i < currentHealth;
+        }
+    }
+
+    private void Die()
+    {
+        GameManager.instance.CheckGameOver(true);
+        gameObject.SetActive(false);
     }
 }

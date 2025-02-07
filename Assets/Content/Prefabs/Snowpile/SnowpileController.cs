@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SnowpileController : MonoBehaviour
@@ -9,10 +7,11 @@ public class SnowpileController : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerBasicMovement player = other.GetComponent<PlayerBasicMovement>();
+
             if (player != null)
             {
-                player.AddAmmo(player.maxAmmo);
-                //Destroy(gameObject); can add sound here too
+                player.AddAmmo(player.maxAmmo); 
+                gameObject.SetActive(false);
             }
         }
     }
