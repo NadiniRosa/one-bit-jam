@@ -41,6 +41,11 @@ public class PlayerBasicMovement : MonoBehaviour
     private Rigidbody2D rb;
     private AudioSource audioSource;
 
+    private float damageCooldown = 1f;
+    private float lastDamageTime = 0f;
+
+    public GameObject playerSprite;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -153,6 +158,15 @@ public class PlayerBasicMovement : MonoBehaviour
             TakeDamage(1);
             Destroy(other.gameObject);
         }
+
+        if (other.CompareTag("Snowman"))
+        {
+            if (Time.time > lastDamageTime + damageCooldown)
+            {
+                TakeDamage(1);
+                lastDamageTime = Time.time;
+            }
+        }
     }
 
     private void TakeDamage(int damage)
@@ -165,7 +179,7 @@ public class PlayerBasicMovement : MonoBehaviour
 
         if (currentHealth <= 0)
         {
-            Die();
+            StartCoroutine(EndGame());
         }
     }
 
@@ -177,9 +191,12 @@ public class PlayerBasicMovement : MonoBehaviour
         }
     }
 
-    private void Die()
+    private IEnumerator EndGame()
     {
+        enabled = false;
+
+        yield return new WaitForSeconds(1f);
+
         GameManager.instance.CheckGameOver(true);
-        gameObject.SetActive(false);
     }
 }

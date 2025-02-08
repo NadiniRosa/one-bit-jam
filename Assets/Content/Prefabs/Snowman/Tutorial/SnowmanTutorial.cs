@@ -37,7 +37,6 @@ public class SnowmanTutorial : MonoBehaviour
         {
             isInTrigger = false;
             pressF.SetActive(false);
-            other.gameObject.SetActive(false);
         }
     }
 }

@@ -551,7 +551,7 @@ GameObject:
   - component: {fileID: 4364305362006694522}
   m_Layer: 0
   m_Name: SnowmanPrefab
-  m_TagString: Untagged
+  m_TagString: Snowman
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -647,8 +647,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f8ccb848432f6f4eabb5577c6134ecd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 20
+  maxHealthStageOne: 20
+  maxHealthStageTwo: 30
   healthBarImage: {fileID: 0}
+  healthBarBorder: {fileID: 0}
   speed: 5
   stopTime: 1
   point1: {fileID: 0}
@@ -659,6 +661,12 @@ MonoBehaviour:
   fireRate: 0.8
   snowballContainer: {fileID: 0}
   _hitSfx: {fileID: 8300000, guid: 337a3b19a97f3e0429fda073f7b76fd9, type: 3}
+  _musicSource: {fileID: 0}
+  stageOneObject: {fileID: 0}
+  stageTwoObject: {fileID: 0}
+  healthBarBorderStageTwo: {fileID: 0}
+  _stageTwoMusic: {fileID: 0}
+  transitionTime: 2
 --- !u!82 &4364305362006694522
 AudioSource:
   m_ObjectHideFlags: 0

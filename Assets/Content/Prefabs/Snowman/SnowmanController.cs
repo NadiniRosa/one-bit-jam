@@ -46,13 +46,11 @@ public class SnowmanController : MonoBehaviour
 
     private Rigidbody2D _rigidbody;
     private AudioSource _audioSource;
-    private SpriteRenderer spriteRenderer;
 
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _audioSource = GetComponent<AudioSource>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
 
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
@@ -92,7 +90,7 @@ public class SnowmanController : MonoBehaviour
             }
             else
             {
-                Die();
+                StartCoroutine(EndGame());
             }
         }
     }
@@ -213,19 +211,13 @@ public class SnowmanController : MonoBehaviour
         }
     }
 
-    private void Die()
-    {
-        GameManager.instance.CheckGameOver(false);
-        StartCoroutine(EndGame());
-        
-    }
-
     private IEnumerator EndGame()
     {
-        yield return new WaitForSeconds(3f);
+        enabled = false;
+
+        yield return new WaitForSeconds(1f);
 
         GameManager.instance.CheckGameOver(false);
-        Destroy(gameObject);
     }
 
     private IEnumerator EnterStageTwo()
@@ -251,7 +243,9 @@ public class SnowmanController : MonoBehaviour
 
         healthBarBorder.sprite = healthBarBorderStageTwo;
         currentHealth = maxHealthStageTwo;
+        
         _musicSource.clip = _stageTwoMusic;
+        _musicSource.Play();
 
         UpdateHealthBar();
 
@@ -259,5 +253,40 @@ public class SnowmanController : MonoBehaviour
 
         if (collider != null)
             collider.enabled = true;
+
+        StopAllCoroutines();
+        StartCoroutine(FollowPlayer());
+        StartCoroutine(ShootAtPlayerStageTwo());
+    }
+
+    private IEnumerator FollowPlayer()
+    {
+        while (isStageTwo)
+        {
+            if (player != null)
+            {
+                Vector2 direction = (player.position - transform.position).normalized;
+                Vector2 newPosition = Vector2.MoveTowards(_rigidbody.position,
+                                                          _rigidbody.position + direction,
+                                                          speed * 0.5f * Time.deltaTime);
+
+                _rigidbody.MovePosition(newPosition);
+            }
+
+            yield return null;
+        }
+    }
+
+    private IEnumerator ShootAtPlayerStageTwo()
+    {
+        while (isStageTwo) 
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (_canShoot && player != null)
+            {
+                Shoot(player.position);
+            }
+        }
     }
 }
