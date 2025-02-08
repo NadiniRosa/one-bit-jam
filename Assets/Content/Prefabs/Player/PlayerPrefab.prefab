@@ -49,8 +49,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4e6702336c97c848aa469de772e7d15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  dashSpeed: 20
+  speed: 5
+  dashSpeed: 10
   dashDuration: 0.2
   dashCooldown: 0.5
   animator: {fileID: 7356752035744795330}
@@ -63,6 +63,8 @@ MonoBehaviour:
   hitSfx: {fileID: 8300000, guid: 62575c5476bff19459be80c09cae8e44, type: 3}
   maxAmmo: 10
   ammoText: {fileID: 0}
+  maxHealth: 4
+  heartIcons: []
 --- !u!82 &5775373776716835431
 AudioSource:
   m_ObjectHideFlags: 0

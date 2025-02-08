@@ -83,6 +83,7 @@ public class PlayerBasicMovement : MonoBehaviour
         {
             rb.MovePosition(rb.position + (Vector2)lastMovementDirection * dashSpeed * Time.deltaTime);
             elapsedTime += Time.deltaTime;
+
             yield return null;
         }
 

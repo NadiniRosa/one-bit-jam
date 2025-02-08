@@ -1,14 +1,18 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SnowmanController : MonoBehaviour
 {
     [Header("Health")]
-    public float maxHealth = 20f;
+    public float maxHealthStageOne = 20f;
+    public float maxHealthStageTwo = 30f;
+
     public Image healthBarImage;
+    public Image healthBarBorder;
 
     private float currentHealth;
+    private bool isStageTwo = false;
 
     [Header("Movement")]
     public float speed = 5f;
@@ -17,34 +21,49 @@ public class SnowmanController : MonoBehaviour
 
     [Header("Shooting")]
     public GameObject snowballPrefab;
-    public Transform firePoint; 
-    public float fireRate = 0.5f;
+    public Transform firePoint;
+    public float fireRate = 0.8f;
     public Transform snowballContainer;
 
     [Header("Audio")]
     [SerializeField] private AudioClip _hitSfx;
+    [SerializeField] private AudioSource _musicSource;
 
-    private Transform _currentTarget;
+    [Header("Stages Settings")]
+    public GameObject stageOneObject;
+    public GameObject stageTwoObject;
+
+    public Sprite healthBarBorderStageTwo;
+    public AudioClip _stageTwoMusic;
+
+    public float transitionTime = 2f;
+
     private bool _isMoving = true;
     private bool _canShoot = true;
+
+    private Transform _currentTarget;
     private Transform player;
 
     private Rigidbody2D _rigidbody;
     private AudioSource _audioSource;
+    private SpriteRenderer spriteRenderer;
 
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _audioSource = GetComponent<AudioSource>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        currentHealth = maxHealth;
+        currentHealth = maxHealthStageOne;
         _currentTarget = point1;
+        stageTwoObject.SetActive(false);
 
         UpdateHealthBar();
+
+        StartCoroutine(StartDelayedShooting());
         StartCoroutine(MoveBetweenPoints());
-        StartCoroutine(ShootAtPlayer());
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -58,16 +77,23 @@ public class SnowmanController : MonoBehaviour
 
     private void TakeDamage(float damage)
     {
-        PlayeOneShot(_hitSfx);
+        PlayOneShot(_hitSfx);
 
         currentHealth -= damage;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        currentHealth = Mathf.Clamp(currentHealth, 0, isStageTwo ? maxHealthStageTwo : maxHealthStageOne);
 
         UpdateHealthBar();
 
         if (currentHealth <= 0)
         {
-            Die();
+            if (!isStageTwo)
+            {
+                StartCoroutine(EnterStageTwo());
+            }
+            else
+            {
+                Die();
+            }
         }
     }
 
@@ -75,21 +101,37 @@ public class SnowmanController : MonoBehaviour
     {
         if (healthBarImage != null)
         {
-            healthBarImage.fillAmount = currentHealth / maxHealth;
+            healthBarImage.fillAmount = currentHealth / (isStageTwo ? maxHealthStageTwo : maxHealthStageOne);
         }
     }
 
-    private void PlayeOneShot(AudioClip audio)
+    private void PlayOneShot(AudioClip audio)
     {
         if (audio != null && _audioSource != null)
             _audioSource.PlayOneShot(audio);
     }
 
+    private IEnumerator StartDelayedShooting()
+    {
+        yield return new WaitForSeconds(2f);
+
+        StartCoroutine(ShootAtPlayer());
+    }
+
     private IEnumerator MoveBetweenPoints()
     {
+        bool firstMove = true;
+
         while (true)
         {
             yield return StartCoroutine(MoveToPoint(point2));
+
+            if (!firstMove)
+            {
+                yield return StartCoroutine(SpecialAttack());
+            }
+
+            firstMove = false;
 
             float waitTime = Random.Range(0f, stopTime);
             yield return new WaitForSeconds(waitTime);
@@ -123,14 +165,41 @@ public class SnowmanController : MonoBehaviour
 
             if (_isMoving && _canShoot && player != null)
             {
-                Shoot();
+                Shoot(player.position);
             }
         }
     }
 
-    private void Shoot()
+    private IEnumerator SpecialAttack()
     {
-        Vector3 direction = (player.position - firePoint.position).normalized;
+        _canShoot = false;
+
+        for (int i = 0; i < 3; i++)
+        {
+            ShootSpread();
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        _canShoot = true;
+    }
+
+    private void ShootSpread()
+    {
+        Vector3[] directions =
+        {
+            new Vector3(-1, -1, 0).normalized,
+            new Vector3(0, -1, 0).normalized,
+            new Vector3(1, -1, 0).normalized
+        };
+
+        foreach (Vector3 direction in directions)
+        {
+            Shoot(direction);
+        }
+    }
+
+    private void Shoot(Vector3 direction)
+    {
         GameObject snowball = Instantiate(snowballPrefab, firePoint.position, Quaternion.identity, snowballContainer);
 
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
@@ -147,6 +216,48 @@ public class SnowmanController : MonoBehaviour
     private void Die()
     {
         GameManager.instance.CheckGameOver(false);
+        StartCoroutine(EndGame());
+        
+    }
+
+    private IEnumerator EndGame()
+    {
+        yield return new WaitForSeconds(3f);
+
+        GameManager.instance.CheckGameOver(false);
         Destroy(gameObject);
+    }
+
+    private IEnumerator EnterStageTwo()
+    {
+        isStageTwo = true;
+        _canShoot = false;
+
+        Collider2D collider = GetComponent<Collider2D>();
+        if (collider != null)
+            collider.enabled = false;
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < transitionTime)
+        {
+            stageOneObject.SetActive(!stageOneObject.activeSelf);
+            yield return new WaitForSeconds(0.2f);
+            elapsedTime += 0.2f;
+        }
+
+        stageOneObject.SetActive(false);
+        stageTwoObject.SetActive(true);
+
+        healthBarBorder.sprite = healthBarBorderStageTwo;
+        currentHealth = maxHealthStageTwo;
+        _musicSource.clip = _stageTwoMusic;
+
+        UpdateHealthBar();
+
+        _canShoot = true;
+
+        if (collider != null)
+            collider.enabled = true;
     }
 }
